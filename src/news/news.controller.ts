@@ -11,6 +11,7 @@ import {
   ParseUUIDPipe,
   UseInterceptors,
   ClassSerializerInterceptor,
+  UseGuards,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -23,6 +24,7 @@ import { CreateNewsDto } from '../news/dto/create-news.dto';
 import { UpdateNewsDto } from '../news/dto/update-dto-news.dto';
 import { NewsResponseDto } from '../news/dto/news-response.dto';
 import { plainToInstance } from 'class-transformer';
+import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 
 @ApiTags('News')
 @Controller('news')
@@ -31,6 +33,8 @@ export class NewsController {
   constructor(private readonly newsService: NewsService) {}
 
   @Post()
+  @UseGuards(JwtAuthGuard)
+  @HttpCode(201)
   @ApiOperation({ summary: 'Create a new news article' })
   @ApiResponse({
     status: 201,
@@ -87,12 +91,13 @@ export class NewsController {
   }
 
   @Delete(':id')
-  @HttpCode(HttpStatus.NO_CONTENT)
+  @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Delete a news article' })
   @ApiParam({ name: 'id', type: 'string', format: 'uuid' })
-  @ApiResponse({ status: 204, description: 'News article deleted successfully' })
+  @ApiResponse({ status: 200, description: 'News article deleted successfully' })
   @ApiResponse({ status: 404, description: 'News not found' })
   async remove(@Param('id', ParseUUIDPipe) id: string) {
-    await this.newsService.remove(id);
+    const result = await this.newsService.remove(id);
+    return result;
   }
 }

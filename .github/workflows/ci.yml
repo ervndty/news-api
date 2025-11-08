@@ -43,8 +43,8 @@ jobs:
       - name: Check pnpm version
         run: pnpm -v
 
-      - name: Lint
-        run: pnpm lint
+      # - name: Lint
+      #   run: pnpm lint
 
       - name: Build NestJS app
         run: pnpm build

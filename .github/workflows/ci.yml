@@ -1,56 +1,52 @@
-name: CI - News API
+name: Nest.js CI
 
+# Kapan workflow ini dijalankan
 on:
+  # Dijalankan saat ada push ke branch 'main'
   push:
-    branches: [main]
+    branches: [ "main" ]
+  # Dijalankan saat ada Pull Request yang ditujukan ke 'main'
   pull_request:
-    branches: [main]
+    branches: [ "main" ]
 
 jobs:
+  # Nama job-nya (bisa apa saja)
   build-and-test:
+    # Menggunakan OS apa untuk menjalankan job
     runs-on: ubuntu-latest
 
-    strategy:
-      matrix:
-        node-version: [24.11.0]
-
     steps:
+      # Langkah 1: Checkout (mengunduh) kode dari repository
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup Node.js ${{ matrix.node-version }}
+      # Langkah 2: Setup Node.js
+      # 'setup-node' juga secara otomatis menangani caching untuk npm/yarn/pnpm
+      - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: ${{ matrix.node-version }}
+          node-version: '20' # Ganti dengan versi Node.js Anda
+          cache: 'npm'      # Gunakan 'yarn' atau 'pnpm' jika Anda memakainya
 
-      - name: Install pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 10
-          run_install: false
-
-      - name: Setup pnpm cache
-        uses: actions/cache@v4
-        with:
-          path: ~/.pnpm-store
-          key: ${{ runner.os }}-pnpm-${{ hashFiles('pnpm-lock.yaml') }}
-          restore-keys: |
-            ${{ runner.os }}-pnpm-
-
+      # Langkah 3: Install dependencies
+      # Menggunakan 'npm ci' lebih cepat dan aman untuk CI 
+      # karena menginstal berdasarkan package-lock.json
       - name: Install dependencies
-        run: pnpm install 
+        run: npm ci
 
-      - name: Check pnpm version
-        run: pnpm -v
+      # Langkah 4: Menjalankan Linter
+      - name: Run linter
+        run: npm run lint
 
-      # - name: Lint
-      #   run: pnpm lint
+      # Langkah 5: Build project
+      # Ini akan mengkompilasi TypeScript ke JavaScript
+      - name: Build project
+        run: npm run build
 
-      - name: Build NestJS app
-        run: pnpm build
-
+      # Langkah 6: Menjalankan Unit Tests
       - name: Run unit tests
-        run: pnpm test -- --ci --passWithNoTests
+        run: npm run test
 
-      - name: Run e2e tests
-        run: pnpm test:e2e -- --ci --passWithNoTests
+      # Langkah 7: Menjalankan E2E Tests
+      - name: Run E2E tests
+        run: npm run test:e2e

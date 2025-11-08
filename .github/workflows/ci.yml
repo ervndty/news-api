@@ -38,7 +38,7 @@ jobs:
             ${{ runner.os }}-pnpm-
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: pnpm install 
 
       - name: Check pnpm version
         run: pnpm -v

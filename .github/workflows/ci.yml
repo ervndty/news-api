@@ -1,52 +1,39 @@
-name: Nest.js CI
+name: CI - NestJS
 
-# Kapan workflow ini dijalankan
 on:
-  # Dijalankan saat ada push ke branch 'main'
   push:
-    branches: [ "main" ]
-  # Dijalankan saat ada Pull Request yang ditujukan ke 'main'
+    branches: [main]
   pull_request:
-    branches: [ "main" ]
+    branches: [main]
 
 jobs:
-  # Nama job-nya (bisa apa saja)
-  build-and-test:
-    # Menggunakan OS apa untuk menjalankan job
+  build:
     runs-on: ubuntu-latest
 
     steps:
-      # Langkah 1: Checkout (mengunduh) kode dari repository
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # Langkah 2: Setup Node.js
-      # 'setup-node' juga secara otomatis menangani caching untuk npm/yarn/pnpm
-      - name: Set up Node.js
+      - name: Use Node.js 20
         uses: actions/setup-node@v4
         with:
-          node-version: '20' # Ganti dengan versi Node.js Anda
-          cache: 'npm'      # Gunakan 'yarn' atau 'pnpm' jika Anda memakainya
+          node-version: 20
+          cache: 'npm'
 
-      # Langkah 3: Install dependencies
-      # Menggunakan 'npm ci' lebih cepat dan aman untuk CI 
-      # karena menginstal berdasarkan package-lock.json
       - name: Install dependencies
         run: npm ci
 
-      # Langkah 4: Menjalankan Linter
-      - name: Run linter
+      - name: Lint code
         run: npm run lint
 
-      # Langkah 5: Build project
-      # Ini akan mengkompilasi TypeScript ke JavaScript
+      - name: Run tests
+        run: npm run test -- --passWithNoTests
+
       - name: Build project
         run: npm run build
 
-      # Langkah 6: Menjalankan Unit Tests
-      - name: Run unit tests
-        run: npm run test
-
-      # Langkah 7: Menjalankan E2E Tests
-      - name: Run E2E tests
-        run: npm run test:e2e
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist

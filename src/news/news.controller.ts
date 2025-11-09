@@ -6,45 +6,45 @@ import {
   Patch,
   Param,
   Delete,
+  UseGuards,
   HttpCode,
   HttpStatus,
-  ParseUUIDPipe,
-  UseInterceptors,
-  ClassSerializerInterceptor,
-  UseGuards,
 } from '@nestjs/common';
 import {
   ApiTags,
   ApiOperation,
   ApiResponse,
-  ApiParam,
+  ApiBearerAuth,
 } from '@nestjs/swagger';
 import { NewsService } from './news.service';
-import { CreateNewsDto } from '../news/dto/create-news.dto';
-import { UpdateNewsDto } from '../news/dto/update-dto-news.dto';
-import { NewsResponseDto } from '../news/dto/news-response.dto';
-import { plainToInstance } from 'class-transformer';
-import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
+import { CreateNewsDto } from './dto/create-news.dto';
+import { UpdateNewsDto } from './dto/update-dto-news.dto';
+import { NewsResponseDto } from './dto/news-response.dto';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
 @ApiTags('News')
 @Controller('news')
-@UseInterceptors(ClassSerializerInterceptor)
 export class NewsController {
   constructor(private readonly newsService: NewsService) {}
 
   @Post()
   @UseGuards(JwtAuthGuard)
-  @HttpCode(201)
-  @ApiOperation({ summary: 'Create a new news article' })
+  @ApiBearerAuth('JWT-auth')
+  @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({
+    summary: 'Create a new news article (Requires Authentication)',
+  })
   @ApiResponse({
     status: 201,
     description: 'News article created successfully',
     type: NewsResponseDto,
   })
-  @ApiResponse({ status: 400, description: 'Bad Request' })
-  async create(@Body() createNewsDto: CreateNewsDto) {
-    const news = await this.newsService.create(createNewsDto);
-    return plainToInstance(NewsResponseDto, news);
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - Invalid or expired token',
+  })
+  async create(@Body() createNewsDto: CreateNewsDto): Promise<NewsResponseDto> {
+    return await this.newsService.create(createNewsDto);
   }
 
   @Get()
@@ -54,50 +54,69 @@ export class NewsController {
     description: 'List of all news articles',
     type: [NewsResponseDto],
   })
-  async findAll() {
-    const newsList = await this.newsService.findAll();
-    return plainToInstance(NewsResponseDto, newsList);
+  async findAll(): Promise<NewsResponseDto[]> {
+    return await this.newsService.findAll();
   }
 
   @Get(':id')
   @ApiOperation({ summary: 'Get a news article by ID' })
-  @ApiParam({ name: 'id', type: 'string', format: 'uuid' })
   @ApiResponse({
     status: 200,
     description: 'News article found',
     type: NewsResponseDto,
   })
-  @ApiResponse({ status: 404, description: 'News not found' })
-  async findOne(@Param('id', ParseUUIDPipe) id: string) {
-    const news = await this.newsService.findOne(id);
-    return plainToInstance(NewsResponseDto, news);
+  @ApiResponse({
+    status: 404,
+    description: 'News article not found',
+  })
+  async findOne(@Param('id') id: string): Promise<NewsResponseDto> {
+    return await this.newsService.findOne(id);
   }
 
   @Patch(':id')
-  @ApiOperation({ summary: 'Update a news article' })
-  @ApiParam({ name: 'id', type: 'string', format: 'uuid' })
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({ summary: 'Update a news article (Requires Authentication)' })
   @ApiResponse({
     status: 200,
     description: 'News article updated successfully',
     type: NewsResponseDto,
   })
-  @ApiResponse({ status: 404, description: 'News not found' })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - Invalid or expired token',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'News article not found',
+  })
   async update(
-    @Param('id', ParseUUIDPipe) id: string,
+    @Param('id') id: string,
     @Body() updateNewsDto: UpdateNewsDto,
-  ) {
-    const news = await this.newsService.update(id, updateNewsDto);
-    return plainToInstance(NewsResponseDto, news);
+  ): Promise<NewsResponseDto> {
+    return await this.newsService.update(id, updateNewsDto);
   }
 
   @Delete(':id')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth('JWT-auth')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Delete a news article' })
-  @ApiParam({ name: 'id', type: 'string', format: 'uuid' })
-  @ApiResponse({ status: 200, description: 'News article deleted successfully' })
-  @ApiResponse({ status: 404, description: 'News not found' })
-  async remove(@Param('id', ParseUUIDPipe) id: string) {
-    const result = await this.newsService.remove(id);
-    return result;
+  @ApiOperation({ summary: 'Delete a news article (Requires Authentication)' })
+  @ApiResponse({
+    status: 200,
+    description: 'News article deleted successfully',
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - Invalid or expired token',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'News article not found',
+  })
+  async remove(
+    @Param('id') id: string,
+  ): Promise<{ message: string; data: NewsResponseDto }> {
+    return await this.newsService.remove(id);
   }
 }

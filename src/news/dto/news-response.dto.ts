@@ -1,40 +1,42 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { Exclude, Expose } from 'class-transformer';
 
-@Exclude()
 export class NewsResponseDto {
-  @Expose()
-  @ApiProperty({ 
+  @ApiProperty({
     example: '123e4567-e89b-12d3-a456-426614174000',
-    description: 'News unique identifier',
+    description: 'News UUID',
   })
   id: string;
 
-  @Expose()
-  @ApiProperty({ 
-    example: 'Breaking News Title',
+  @ApiProperty({
+    example: 'Breaking News',
     description: 'News title',
   })
   title: string;
 
-  @Expose()
-  @ApiProperty({ 
-    example: 'This is the full description of the news article.',
+  @ApiProperty({
+    example: 'This is the news description...',
     description: 'News description',
   })
   description: string;
 
-  @Expose()
-  @ApiProperty({ 
+  @ApiProperty({
     example: '2024-01-01T00:00:00.000Z',
     description: 'Creation timestamp',
+    nullable: true,
   })
-  createdAt: Date;
+  created_at: Date | null;
 
-  @Expose()
-  @ApiProperty({ 
+  @ApiProperty({
     example: '2024-01-01T00:00:00.000Z',
     description: 'Last update timestamp',
+    nullable: true,
   })
-  updatedAt: Date;
+  updated_at: Date | null;
+
+  @ApiProperty({
+    example: null,
+    description: 'Deletion timestamp (soft delete)',
+    nullable: true,
+  })
+  deleted_at: Date | null;
 }

@@ -9,6 +9,16 @@ import { LoginDto } from '../auth/dto/login.dto';
 import { LoginResponseDto } from '../auth/dto/login-response.dto';
 import { RegisterAuthAdminDto } from './dto/register-admin.dto';
 
+// Define proper type for admin user
+interface AdminUser {
+  id: string;
+  username: string;
+  password: string;
+  created_at?: Date;
+  updated_at?: Date;
+  deleted_at?: Date | null;
+}
+
 @Injectable()
 export class AuthService {
   constructor(
@@ -21,15 +31,25 @@ export class AuthService {
     registerAuthAdminDto: RegisterAuthAdminDto,
   ): Promise<{ message: string }> {
     const { username, password } = registerAuthAdminDto;
-    const [existingUser] = await this.db
+
+    const existingUsers = await this.db
       .select()
       .from(authSchema.authAdmin)
-      .where(eq(authSchema.authAdmin.username, username));
+      .where(
+        and(
+          eq(authSchema.authAdmin.username, username),
+          isNull(authSchema.authAdmin.deleted_at),
+        ),
+      );
+
+    const existingUser = existingUsers[0] as AdminUser | undefined;
 
     if (existingUser) {
       throw new ConflictException('Username already exists');
     }
+
     const hashedPassword = await bcrypt.hash(password, 10);
+
     await this.db.insert(authSchema.authAdmin).values({
       username,
       password: hashedPassword,
@@ -41,7 +61,7 @@ export class AuthService {
   async login(loginDto: LoginDto): Promise<LoginResponseDto> {
     const { username, password } = loginDto;
 
-    const [admin] = await this.db
+    const admins = await this.db
       .select()
       .from(authSchema.authAdmin)
       .where(
@@ -50,6 +70,8 @@ export class AuthService {
           isNull(authSchema.authAdmin.deleted_at),
         ),
       );
+
+    const admin = admins[0] as AdminUser | undefined;
 
     if (!admin) {
       throw new UnauthorizedException('Invalid credentials');
@@ -77,7 +99,7 @@ export class AuthService {
   }
 
   async validateUser(userId: string) {
-    const [admin] = await this.db
+    const admins = await this.db
       .select()
       .from(authSchema.authAdmin)
       .where(
@@ -86,6 +108,8 @@ export class AuthService {
           isNull(authSchema.authAdmin.deleted_at),
         ),
       );
+
+    const admin = admins[0] as AdminUser | undefined;
 
     if (!admin) {
       throw new UnauthorizedException('User not found');

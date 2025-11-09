@@ -19,35 +19,29 @@ interface AdminUser {
   deleted_at?: Date | null;
 }
 
-// Type-safe reference to the schema table
-type AuthAdminSchema = typeof authSchema;
-type AuthAdminTable = AuthAdminSchema['authAdmin'];
-
 @Injectable()
 export class AuthService {
-  private readonly authAdminTable: AuthAdminTable;
-
   constructor(
     @Inject('DB') private db: NodePgDatabase<typeof authSchema>,
     private jwtService: JwtService,
     private configService: ConfigService,
-  ) {
-    // Initialize with type-safe reference
-    this.authAdminTable = authSchema.authAdmin as AuthAdminTable;
-  }
+  ) {}
 
   async register(
     registerAuthAdminDto: RegisterAuthAdminDto,
   ): Promise<{ message: string }> {
     const { username, password } = registerAuthAdminDto;
 
+    // Use type assertion to avoid unsafe member access
+    const authAdminTable = authSchema.authAdmin as typeof authSchema.authAdmin;
+
     const existingUsers = await this.db
       .select()
-      .from(this.authAdminTable)
+      .from(authAdminTable)
       .where(
         and(
-          eq(this.authAdminTable.username, username),
-          isNull(this.authAdminTable.deleted_at),
+          eq(authAdminTable.username, username),
+          isNull(authAdminTable.deleted_at),
         ),
       );
 
@@ -59,7 +53,7 @@ export class AuthService {
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    await this.db.insert(this.authAdminTable).values({
+    await this.db.insert(authAdminTable).values({
       username,
       password: hashedPassword,
     });
@@ -70,13 +64,15 @@ export class AuthService {
   async login(loginDto: LoginDto): Promise<LoginResponseDto> {
     const { username, password } = loginDto;
 
+    const authAdminTable = authSchema.authAdmin as typeof authSchema.authAdmin;
+
     const admins = await this.db
       .select()
-      .from(this.authAdminTable)
+      .from(authAdminTable)
       .where(
         and(
-          eq(this.authAdminTable.username, username),
-          isNull(this.authAdminTable.deleted_at),
+          eq(authAdminTable.username, username),
+          isNull(authAdminTable.deleted_at),
         ),
       );
 
@@ -108,13 +104,15 @@ export class AuthService {
   }
 
   async validateUser(userId: string) {
+    const authAdminTable = authSchema.authAdmin as typeof authSchema.authAdmin;
+
     const admins = await this.db
       .select()
-      .from(this.authAdminTable)
+      .from(authAdminTable)
       .where(
         and(
-          eq(this.authAdminTable.id, userId),
-          isNull(this.authAdminTable.deleted_at),
+          eq(authAdminTable.id, userId),
+          isNull(authAdminTable.deleted_at),
         ),
       );
 

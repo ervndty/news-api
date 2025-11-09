@@ -1,39 +1,56 @@
-name: CI - NestJS
+name: CI - News API
 
 on:
   push:
-    branches: [main]
+    branches: [main, develop]
   pull_request:
-    branches: [main]
+    branches: [main, develop]
 
 jobs:
-  build:
+  build-and-test:
     runs-on: ubuntu-latest
 
+    strategy:
+      matrix:
+        node-version: [18.x, 20.x]
+
     steps:
-      - name: Checkout repository
+      - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Use Node.js 20
+      - name: Install pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8
+
+      - name: Setup Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v4
         with:
-          node-version: 20
-          cache: 'npm'
+          node-version: ${{ matrix.node-version }}
+          cache: 'pnpm'
 
       - name: Install dependencies
-        run: npm ci
+        run: pnpm install --frozen-lockfile
 
-      - name: Lint code
-        run: npm run lint
+      - name: Lint
+        run: pnpm run lint
+
+      - name: Type check
+        run: pnpm run build
 
       - name: Run tests
-        run: npm run test -- --passWithNoTests
+        run: pnpm run test
 
-      - name: Build project
-        run: npm run build
+      - name: Run e2e tests
+        run: pnpm run test:e2e
 
-      - name: Upload build artifact
-        uses: actions/upload-artifact@v4
+      - name: Test coverage
+        run: pnpm run test:cov
+
+      - name: Upload coverage reports
+        uses: codecov/codecov-action@v3
         with:
-          name: dist
-          path: dist
+          file: ./coverage/lcov.info
+          flags: unittests
+          name: codecov-umbrella
+        if: matrix.node-version == '20.x'

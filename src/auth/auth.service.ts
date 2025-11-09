@@ -1,18 +1,23 @@
-import { Injectable, UnauthorizedException, Inject, ConflictException } from '@nestjs/common';
+import {
+  Injectable,
+  UnauthorizedException,
+  Inject,
+  ConflictException,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
-import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { eq, isNull, and } from 'drizzle-orm';
 import * as bcrypt from 'bcrypt';
 import * as authSchema from '../db/schema/auth-admin.schema';
 import { LoginDto } from '../auth/dto/login.dto';
 import { LoginResponseDto } from '../auth/dto/login-response.dto';
 import { RegisterAuthAdminDto } from './dto/register-admin.dto';
+import type { DbType } from '../db/drizzle.module';
 
 @Injectable()
 export class AuthService {
   constructor(
-    @Inject('DB') private db: NodePgDatabase<typeof authSchema>,
+    @Inject('DB') private db: DbType,
     private jwtService: JwtService,
     private configService: ConfigService,
   ) {}
@@ -32,7 +37,7 @@ export class AuthService {
         ),
       );
 
-    const existingUser: authSchema.AuthAdmin | undefined = existingUsers[0];
+    const existingUser = existingUsers[0];
 
     if (existingUser) {
       throw new ConflictException('Username already exists');
@@ -61,7 +66,7 @@ export class AuthService {
         ),
       );
 
-    const admin: authSchema.AuthAdmin | undefined = admins[0];
+    const admin = admins[0];
 
     if (!admin) {
       throw new UnauthorizedException('Invalid credentials');
@@ -99,7 +104,7 @@ export class AuthService {
         ),
       );
 
-    const admin: authSchema.AuthAdmin | undefined = admins[0];
+    const admin = admins[0];
 
     if (!admin) {
       throw new UnauthorizedException('User not found');

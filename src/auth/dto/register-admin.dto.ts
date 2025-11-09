@@ -2,7 +2,7 @@ import { IsString, MinLength, MaxLength } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class RegisterAuthAdminDto {
-  @ApiProperty({ 
+  @ApiProperty({
     example: 'admin',
     description: 'Admin username (3-100 characters)',
     minLength: 3,
@@ -13,7 +13,7 @@ export class RegisterAuthAdminDto {
   @MaxLength(100)
   username: string;
 
-  @ApiProperty({ 
+  @ApiProperty({
     example: 'admin123',
     description: 'Admin password (6-255 characters)',
     minLength: 6,

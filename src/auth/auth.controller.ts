@@ -21,7 +21,7 @@ export class AuthController {
     status: 409,
     description: 'Username already exists',
   })
-  async registrer(@Body() dto: RegisterAuthAdminDto){
+  async registrer(@Body() dto: RegisterAuthAdminDto) {
     return this.authService.register(dto);
   }
 
@@ -33,8 +33,8 @@ export class AuthController {
     description: 'Login successful',
     type: LoginResponseDto,
   })
-  @ApiResponse({ 
-    status: 401, 
+  @ApiResponse({
+    status: 401,
     description: 'Invalid credentials',
   })
   async login(@Body() loginDto: LoginDto): Promise<LoginResponseDto> {

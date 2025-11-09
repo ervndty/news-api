@@ -19,13 +19,22 @@ interface AdminUser {
   deleted_at?: Date | null;
 }
 
+// Type-safe reference to the schema table
+type AuthAdminSchema = typeof authSchema;
+type AuthAdminTable = AuthAdminSchema['authAdmin'];
+
 @Injectable()
 export class AuthService {
+  private readonly authAdminTable: AuthAdminTable;
+
   constructor(
     @Inject('DB') private db: NodePgDatabase<typeof authSchema>,
     private jwtService: JwtService,
     private configService: ConfigService,
-  ) {}
+  ) {
+    // Initialize with type-safe reference
+    this.authAdminTable = authSchema.authAdmin as AuthAdminTable;
+  }
 
   async register(
     registerAuthAdminDto: RegisterAuthAdminDto,
@@ -34,11 +43,11 @@ export class AuthService {
 
     const existingUsers = await this.db
       .select()
-      .from(authSchema.authAdmin)
+      .from(this.authAdminTable)
       .where(
         and(
-          eq(authSchema.authAdmin.username, username),
-          isNull(authSchema.authAdmin.deleted_at),
+          eq(this.authAdminTable.username, username),
+          isNull(this.authAdminTable.deleted_at),
         ),
       );
 
@@ -50,7 +59,7 @@ export class AuthService {
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    await this.db.insert(authSchema.authAdmin).values({
+    await this.db.insert(this.authAdminTable).values({
       username,
       password: hashedPassword,
     });
@@ -63,11 +72,11 @@ export class AuthService {
 
     const admins = await this.db
       .select()
-      .from(authSchema.authAdmin)
+      .from(this.authAdminTable)
       .where(
         and(
-          eq(authSchema.authAdmin.username, username),
-          isNull(authSchema.authAdmin.deleted_at),
+          eq(this.authAdminTable.username, username),
+          isNull(this.authAdminTable.deleted_at),
         ),
       );
 
@@ -101,11 +110,11 @@ export class AuthService {
   async validateUser(userId: string) {
     const admins = await this.db
       .select()
-      .from(authSchema.authAdmin)
+      .from(this.authAdminTable)
       .where(
         and(
-          eq(authSchema.authAdmin.id, userId),
-          isNull(authSchema.authAdmin.deleted_at),
+          eq(this.authAdminTable.id, userId),
+          isNull(this.authAdminTable.deleted_at),
         ),
       );
 
